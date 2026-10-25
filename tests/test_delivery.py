@@ -25,8 +25,7 @@ def test_send_notification_success(mock_post):
     mock_post.assert_called_once()
     _, kwargs = mock_post.call_args
     assert kwargs["json"]["user_id"] == 123
-    assert kwargs["json"]["type"] == "meeting"
-    assert kwargs["json"]["title"] == "Созвон"
+    assert kwargs["json"]["message"] == "Напоминание: Созвон\nВремя: 2099-01-01T10:00:00Z"
     assert kwargs["timeout"] > 0
 
 

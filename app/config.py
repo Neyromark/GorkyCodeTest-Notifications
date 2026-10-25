@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
 from urllib.parse import quote_plus
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
+load_dotenv()
 
 class Settings(BaseSettings):
+    model_config = {"env_file": ".env", "extra": "ignore"}
+
     # Теперь URL указывает на vkbottle_bot
     notification_service_url: str = "http://vkbottle_bot/api/v1/send-message"
     auth_token: str = ""  # Пока пустой, но готов к использованию
@@ -16,8 +20,6 @@ class Settings(BaseSettings):
     postgres_user: str = "postgres"
     postgres_password: str
     postgres_db: str = "tasks_db"
-
-    model_config = {"env_file": ".env", "extra": "ignore"}
 
     @computed_field
     @property
