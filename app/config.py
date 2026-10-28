@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from urllib.parse import quote_plus
+from urllib.parse import quote
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def database_url(self) -> str:
-        pwd = quote_plus(self.postgres_password)
+        pwd = quote(self.postgres_password, safe="")
         return f"postgresql+psycopg://{self.postgres_user}:{pwd}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
 
