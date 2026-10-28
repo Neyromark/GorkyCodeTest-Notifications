@@ -19,7 +19,8 @@ class NotificationCreate(BaseModel):
     @field_validator("date_notify", "date")
     @classmethod
     def ensure_tz_aware(cls, v: datetime) -> datetime:
-        return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+        # Приводим к UTC, чтобы одно и то же время давало один и тот же job_id
+        return v.astimezone(timezone.utc) if v.tzinfo else v.replace(tzinfo=timezone.utc)
 
     @model_validator(mode="after")
     def check_rules(self) -> "NotificationCreate":
