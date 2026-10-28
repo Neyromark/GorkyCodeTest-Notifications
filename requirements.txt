@@ -27,6 +27,7 @@ SQLAlchemy==2.1.6
 starlette==1.10.0
 truststore==0.10.5
 typing-inspection==0.4.4
+tzdata==2025.2
 typing_extensions==4.16.0
 tzlocal==5.4.5
 urllib3==2.8.0

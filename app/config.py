@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     timezone: str = "UTC"
     request_timeout: float = 10.0
 
+    max_delivery_attempts: int = 5
+    retry_base_delay: int = 30  # секунд, удваивается с каждой попыткой
+    stale_after_seconds: int = 900  # не слать напоминание, если событие началось раньше
+
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str = "postgres"
