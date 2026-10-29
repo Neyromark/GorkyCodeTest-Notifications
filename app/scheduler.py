@@ -1,6 +1,7 @@
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,6 +32,9 @@ def deliver(payload: dict, job_id: str, attempt: int = 1) -> None:
         logger.warning("Skipping stale job_id=%s: event at %s already passed", job_id, payload["date"])
         return
 
+    # Джобы, запланированные до появления request_id. Повторы получат его вместе с payload
+    payload.setdefault("request_id", str(uuid4()))
+
     try:
         send_notification(payload)
     except DeliveryError:
@@ -55,11 +59,13 @@ def deliver(payload: dict, job_id: str, attempt: int = 1) -> None:
 
 def schedule(data: NotificationCreate) -> str:
     job_id = _job_id(data)
+    payload = data.model_dump(mode="json")
+    payload["request_id"] = str(uuid4())
     job = scheduler.add_job(
         func=deliver,
         trigger="date",
         run_date=data.date_notify,
-        args=[data.model_dump(mode="json"), job_id],
+        args=[payload, job_id],
         id=job_id,
         replace_existing=True,
         # Опоздавшие (после простоя сервиса) джобы всё равно выполняются,

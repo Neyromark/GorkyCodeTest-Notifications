@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -30,6 +31,7 @@ def test_schedule_creates_job(fresh_scheduler):
     assert job.args[0]["user_id"] == 123
     assert job.args[0]["type"] == "meeting"
     assert job.args[0]["title"] == "Созвон"
+    assert uuid.UUID(job.args[0]["request_id"]).version == 4
 
 
 def test_schedule_is_idempotent(fresh_scheduler):
@@ -113,6 +115,37 @@ def test_deliver_schedules_retry_on_failure(fresh_scheduler, monkeypatch):
     retry = fresh_scheduler.get_job("notify_123_abc_retry1")
     assert retry is not None
     assert retry.args[2] == 2
+
+
+def test_retry_keeps_request_id(fresh_scheduler, monkeypatch):
+    """Повтор доставки идёт с тем же X-Request-ID, чтобы бот не отправил сообщение дважды."""
+    import app.scheduler as sched_module
+    sent = []
+
+    def failing_send(payload: dict) -> None:
+        sent.append(payload["request_id"])
+        raise DeliveryError("bot is down")
+
+    monkeypatch.setattr(sched_module, "send_notification", failing_send)
+
+    payload = _payload()
+    payload["request_id"] = str(uuid.uuid4())
+    deliver(payload, "notify_123_abc")
+
+    retry = fresh_scheduler.get_job("notify_123_abc_retry1")
+    assert sent == [payload["request_id"]]
+    assert retry.args[0]["request_id"] == payload["request_id"]
+
+
+def test_deliver_adds_request_id_to_old_jobs(fresh_scheduler, monkeypatch):
+    """Джобы без request_id (запланированные до его появления) всё равно доставляются."""
+    import app.scheduler as sched_module
+    sent = []
+    monkeypatch.setattr(sched_module, "send_notification", sent.append)
+
+    deliver(_payload(), "notify_123_abc")
+
+    assert uuid.UUID(sent[0]["request_id"]).version == 4
 
 
 def test_deliver_gives_up_after_max_attempts(fresh_scheduler, monkeypatch):

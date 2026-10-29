@@ -13,6 +13,7 @@ def _payload() -> dict:
         "user_id": 123,
         "title": "Созвон",
         "date": "2099-01-01T10:00:00Z",
+        "request_id": "2c7a3a52-6f0e-4c8e-9a4e-3f1b2d7c9e01",
     }
 
 
@@ -24,9 +25,21 @@ def test_send_notification_success(mock_post):
 
     mock_post.assert_called_once()
     _, kwargs = mock_post.call_args
+    assert kwargs["json"]["type"] == "message"
     assert kwargs["json"]["user_id"] == 123
     assert kwargs["json"]["message"] == "Напоминание: Созвон\nВремя: 01.01.2099 13:00 МСК"
     assert kwargs["timeout"] > 0
+
+
+@patch("app.delivery.requests.post")
+def test_request_id_sent_in_header(mock_post):
+    mock_post.return_value = Mock(status_code=200)
+
+    send_notification(_payload())
+
+    _, kwargs = mock_post.call_args
+    assert kwargs["headers"]["X-Request-ID"] == _payload()["request_id"]
+    assert "X-Request-ID" not in kwargs["json"]
 
 
 @patch("app.delivery.requests.post")

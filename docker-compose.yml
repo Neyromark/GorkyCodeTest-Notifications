@@ -1,31 +1,17 @@
 services:
-  db:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
-      POSTGRES_DB: ${POSTGRES_DB:-tasks_db}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   notifications:
     build: .
     restart: unless-stopped
+    # БД — сервис postgres (container_name tasks_postgres_db) из подмодуля Database
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
     env_file:
       - path: .env
         required: false
     # Значения ниже имеют приоритет над .env
     environment:
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD в .env}
@@ -34,7 +20,11 @@ services:
       AUTH_TOKEN: ${AUTH_TOKEN:-}
       TIMEZONE: ${TIMEZONE:-UTC}
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "${APP_PORT:-8000}:8080"
+    networks:
+      - app-network
 
-volumes:
-  pgdata:
+networks:
+  app-network:
+    external: true
+    name: app-network
