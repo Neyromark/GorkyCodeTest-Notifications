@@ -30,10 +30,14 @@ def _format_message(payload: dict) -> str:
 def send_notification(payload: dict) -> None:
     """Отправляет сообщение в бота. Бросает DeliveryError, если стоит повторить."""
     vk_payload = {
+        "type" : "message",
         "user_id": payload["user_id"],
         "message": _format_message(payload)
     }
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "X-Request-ID": payload["request_id"]
+    }
     if settings.auth_token:
         headers["Authorization"] = f"Bearer {settings.auth_token}"
 
