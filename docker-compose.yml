@@ -23,8 +23,3 @@ services:
       - "${APP_PORT:-8000}:8080"
     networks:
       - app-network
-
-networks:
-  app-network:
-    external: true
-    name: app-network
